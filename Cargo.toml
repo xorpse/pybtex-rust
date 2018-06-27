@@ -1,0 +1,7 @@
+[package]
+name = "pybtex"
+version = "0.1.0"
+authors = ["Sam Thomas <m@kali.ai>"]
+
+[dependencies]
+cpython = "0.1"
