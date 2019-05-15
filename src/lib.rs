@@ -24,6 +24,7 @@ pub fn parse_bibliography(file: &str) -> Result<Vec<Entry>, PyErr> {
     let py = gil.python();
     let db = py.import("pybtex.database")?;
     let plain = py.import("pybtex.style.names.plain")?.call(py, "NameStyle", NoArgs, None)?;
+    let fmt = py.import("pybtex.richtext")?.call(py, "Text", NoArgs, None)?;
     let bib_data = db.call(py, "parse_file", (file,), None)?;
 
     let entries = bib_data
@@ -36,15 +37,15 @@ pub fn parse_bibliography(file: &str) -> Result<Vec<Entry>, PyErr> {
     for entry in entries {
         let entry = entry.unwrap();
         let key: String = entry.getattr(py, "key")?.extract(py)?;
-        let rich_fields = entry.getattr(py, "rich_fields")?;
+        let fields = entry.getattr(py, "fields")?;
 
-        let year: u16 = if let Ok(year) = rich_fields.get_item(py, "year").and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)) {
+        let year: u16 = if let Ok(year) = fields.get_item(py, "year").and_then(|v| fmt.call_method(py, "from_latex", (v,), None)).and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)) {
             year.parse::<u16>().unwrap()
         } else {
             continue
         };
 
-        let title = if let Ok(title) = rich_fields.get_item(py, "title").and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)) {
+        let title = if let Ok(title) = fields.get_item(py, "title").and_then(|v| fmt.call_method(py, "from_latex", (v,), None)).and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)) {
             title
         } else {
             continue
@@ -69,13 +70,13 @@ pub fn parse_bibliography(file: &str) -> Result<Vec<Entry>, PyErr> {
             None
         };
 
-        let booktitle = rich_fields.get_item(py, "booktitle").and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
+        let booktitle = fields.get_item(py, "booktitle").and_then(|v| fmt.call_method(py, "from_latex", (v,), None)).and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
 
-        let series = rich_fields.get_item(py, "series").and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
+        let series = fields.get_item(py, "series").and_then(|v| fmt.call_method(py, "from_latex", (v,), None)).and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
 
-        let note = rich_fields.get_item(py, "note").and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
-        let slides = rich_fields.get_item(py, "_slides").and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
-        let pdf = rich_fields.get_item(py, "_pdf").and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
+        let note = fields.get_item(py, "note").and_then(|v| fmt.call_method(py, "from_latex", (v,), None)).and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
+        let slides = fields.get_item(py, "_slides").and_then(|v| fmt.call_method(py, "from_latex", (v,), None)).and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
+        let pdf = fields.get_item(py, "_pdf").and_then(|v| fmt.call_method(py, "from_latex", (v,), None)).and_then(|v| v.str(py)).and_then(|v| v.to_string(py).map(String::from)).ok();
 
         bib_entries.push(Entry {
             key,
